@@ -44,12 +44,16 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+use pallet_insecure_randomness_collective_flip;
 
 /// Import the template pallet.
 pub use pallet_template;
 
 /// Import the poe pallet.
 pub use pallet_poe;
+
+/// Import the kitties pallet.
+pub use pallet_kitties;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -277,6 +281,14 @@ impl pallet_poe::Config for Runtime {
 	type MaxClaimLength = ConstU32<32>;
 }
 
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {
+}
+
+impl pallet_kitties::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Randomness = pallet_insecure_randomness_collective_flip::Pallet<Self>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -296,6 +308,7 @@ construct_runtime!(
 		TemplateModule: pallet_template,
 		// Include the custom logic from the pallet-poe in the runtime.
 		PoeModule: pallet_poe,
+		KittiesModule: pallet_kitties,
 	}
 );
 

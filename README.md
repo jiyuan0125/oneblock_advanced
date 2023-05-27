@@ -14,5 +14,22 @@
 ### 截图：
 ![tests](./img/lesson01_01.png)
 
+## 第二节课作业
+
+### 作业1
+
+跟着视频,完成Kitties的开发
+* Pallet编译成功
+* 单元测试通过
+* 加入kitties pallet到runtime中,node可以编译通过
+* node节点可以正常启动
+
+### 答案：
+[pallets/kitties](./pallets/kitties)
+
+### 截图：
+![tests](./img/lesson02_01.png)
+![tests](./img/lesson02_02.png)
+
 
 ![OneBlock+](./img/substrate.png)
