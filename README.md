@@ -60,9 +60,7 @@ Runtime 升级
 [pallets/kitties](./pallets/kitties)
 
 ### 截图：
-![tests](./img/lesson03_01.png)
-![tests](./img/lesson03_02.png)
-![tests](./img/lesson03_03.png)
+![tests](./img/lesson03_04.png)
 
 
 ![OneBlock+](./img/substrate.png)
