@@ -4553,6 +4553,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "once_cell",
+ "pallet-balances",
  "pallet-insecure-randomness-collective-flip",
  "parity-scale-codec",
  "scale-info",
