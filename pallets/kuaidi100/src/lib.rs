@@ -5,15 +5,6 @@
 /// <https://docs.substrate.io/reference/frame-pallets/>
 pub use pallet::*;
 
-// #[cfg(test)]
-// mod mock;
-
-// #[cfg(test)]
-// mod tests;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
-
 mod kuaidi100_price;
 
 use sp_core::crypto::KeyTypeId;
@@ -97,14 +88,6 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
-	// The pallet's runtime storage items.
-	// https://docs.substrate.io/main-docs/build/runtime-storage/
-	#[pallet::storage]
-	#[pallet::getter(fn something)]
-	// Learn more about declaring storage items:
-	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
-
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/main-docs/build/events-errors/
 	#[pallet::event]
@@ -112,16 +95,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
-		SomethingStored { something: u32, who: T::AccountId },
-	}
-
-	// Errors inform users that something went wrong.
-	#[pallet::error]
-	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
-		/// Errors should have helpful documentation associated with them.
-		StorageOverflow,
+		ParcelWeightStored { parcel_weight: BoundedVec<u8, ConstU32<4>>, who: T::AccountId },
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -129,46 +103,7 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// An example dispatchable that takes a singles value as a parameter, writes the value to
-		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
 		#[pallet::call_index(0)]
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
-			// Check that the extrinsic was signed and get the signer.
-			// This function will return an error if the extrinsic is not signed.
-			// https://docs.substrate.io/main-docs/build/origins/
-			let who = ensure_signed(origin)?;
-
-			// Update storage.
-			<Something<T>>::put(something);
-
-			// Emit an event.
-			Self::deposit_event(Event::SomethingStored { something, who });
-			// Return a successful DispatchResultWithPostInfo
-			Ok(())
-		}
-
-		/// An example dispatchable that may throw a custom error.
-		#[pallet::call_index(1)]
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
-		pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-			let _who = ensure_signed(origin)?;
-
-			// Read a value from storage.
-			match <Something<T>>::get() {
-				// Return an error if the value has not been set.
-				None => return Err(Error::<T>::NoneValue.into()),
-				Some(old) => {
-					// Increment the value read from storage; will error in the event of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
-					<Something<T>>::put(new);
-					Ok(())
-				},
-			}
-		}
-
-		#[pallet::call_index(2)]
 		#[pallet::weight(0)]
 		pub fn unsigned_extrinsic_with_signed_payload(
 			origin: OriginFor<T>,
@@ -185,7 +120,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::call_index(3)]
+		#[pallet::call_index(1)]
 		#[pallet::weight(0)]
 		pub fn set_parcel_weight(
 			origin: OriginFor<T>,
@@ -195,11 +130,18 @@ pub mod pallet {
 
 			let key = Self::derived_key(frame_system::Pallet::<T>::block_number());
 			log::info!("OCW ==> set_parcel_weight: {:?}", parcel_weight);
-			let data = IndexingData(parcel_weight);
+			let data = IndexingData(parcel_weight.clone());
 
 			log::info!("!!!!!!!!!!!!!!!OCW ==> set key: {:?}", key);
 			log::info!("!!!!!!!!!!!!!!!OCW ==> set value: {:?}", &data.encode());
 			sp_io::offchain_index::set(&key, &data.encode());
+
+			let block_number =  frame_system::Pallet::<T>::block_number();
+			log::info!("!!!!!!!!!!!!!!!block_number is {:?}", block_number);
+			let parcel_weight_from_storage = Self::get_parcel_weight_from_storage(block_number);
+			log::info!("!!!!!!!!!!!!!!!parcel_weight_from_storage is {:?}", parcel_weight_from_storage);
+
+			Self::deposit_event(Event::ParcelWeightStored { parcel_weight, who: _who });
 			Ok(())
 		}
 	}
@@ -241,31 +183,8 @@ pub mod pallet {
 		fn offchain_worker(block_number: T::BlockNumber) {
 			log::info!("OCW ==> Hello World from offchain workers!: {:?}", block_number);
 
-			// Reading back the offchain indexing value. This is exactly the same as reading from
-			// ocw local storage.
-			let key = Self::derived_key(block_number);
-
-			let storage_ref = sp_runtime::offchain::storage::StorageValueRef::persistent(&key);
-			// combine to a tuple and print it
-			let bytes = "2".as_bytes();
-			let vec = Vec::from(bytes);
-			let value: BoundedVec<u8, ConstU32<4>> = vec.try_into().unwrap();
-			log::info!("OCW ==> in odd block, value to write: {:?}", value);
-
-			//  write or mutate tuple content to key
-			storage_ref.set(&value);
-
-			let parcel_weight = storage_ref
-				.get::<IndexingData>()
-				.unwrap_or_else(|_| {
-					log::info!("OCW ==> Error while fetching data from offchain storage!");
-					None
-				})
-				.unwrap_or(IndexingData(
-					BoundedVec::<u8, ConstU32<4>>::try_from(b"1".to_vec()).unwrap(),
-				));
-
-			if let Ok(info) = Self::fetch_kuaidi100_price_info(parcel_weight.0) {
+			let parcel_weight = Self::get_parcel_weight_from_storage(block_number);
+			if let Ok(info) = Self::fetch_kuaidi100_price_info(parcel_weight) {
 				log::info!("OCW ==> Kuaidi100 Price Info: {:?}", info);
 
 				// Retrieve the signer to sign the payload
@@ -366,6 +285,23 @@ pub mod pallet {
 					.copied()
 					.collect::<Vec<u8>>()
 			})
+		}
+
+		fn get_parcel_weight_from_storage(
+			block_number: T::BlockNumber,
+		) -> BoundedVec<u8, ConstU32<4>> {
+			let mut result = BoundedVec::<u8, ConstU32<4>>::try_from(b"1".to_vec()).unwrap();
+			if let Some(parcel_weight) = sp_runtime::offchain::storage::StorageValueRef::persistent(
+				&Self::derived_key(block_number),
+			)
+			.get::<IndexingData>()
+			.unwrap_or_else(|_| {
+				log::info!("OCW ==> Error while fetching data from offchain storage!");
+				None
+			}) {
+				result = parcel_weight.0;
+			}
+			result
 		}
 	}
 }
