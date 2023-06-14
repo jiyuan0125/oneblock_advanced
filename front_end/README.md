@@ -12,7 +12,3 @@ npm install -g ts-node
 yarn install
 ts-node get_offchain_storage.ts
 ```
-
-2. 在 apps 上使用 Alice 账号向 Bob 账号转账 10 个 Unit。
-
-![](img01.png)

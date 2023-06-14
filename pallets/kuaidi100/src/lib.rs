@@ -40,6 +40,7 @@ pub mod crypto {
 
 #[frame_support::pallet]
 pub mod pallet {
+
 	use frame_support::pallet_prelude::*;
 	use frame_system::{
 		offchain::{
@@ -128,18 +129,15 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _who = ensure_signed(origin)?;
 
-			let key = Self::derived_key(frame_system::Pallet::<T>::block_number());
-			log::info!("OCW ==> set_parcel_weight: {:?}", parcel_weight);
+			log::info!("EXTRINSIC ==> set_parcel_weight: {:?}", parcel_weight);
 			let data = IndexingData(parcel_weight.clone());
 
-			log::info!("!!!!!!!!!!!!!!!OCW ==> set key: {:?}", key);
-			log::info!("!!!!!!!!!!!!!!!OCW ==> set value: {:?}", &data.encode());
-			sp_io::offchain_index::set(&key, &data.encode());
-
-			let block_number =  frame_system::Pallet::<T>::block_number();
-			log::info!("!!!!!!!!!!!!!!!block_number is {:?}", block_number);
-			let parcel_weight_from_storage = Self::get_parcel_weight_from_storage(block_number);
-			log::info!("!!!!!!!!!!!!!!!parcel_weight_from_storage is {:?}", parcel_weight_from_storage);
+			log::info!("EXTRINSIC ==> set key: {:?}", ONCHAIN_TX_KEY);
+			log::info!(
+				"EXTRINSIC ==> set value: {:?}",
+				sp_std::str::from_utf8(&parcel_weight).unwrap()
+			);
+			sp_io::offchain_index::set(&ONCHAIN_TX_KEY, &data.encode());
 
 			Self::deposit_event(Event::ParcelWeightStored { parcel_weight, who: _who });
 			Ok(())
@@ -181,9 +179,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: T::BlockNumber) {
-			log::info!("OCW ==> Hello World from offchain workers!: {:?}", block_number);
-
-			let parcel_weight = Self::get_parcel_weight_from_storage(block_number);
+			let parcel_weight = Self::get_parcel_weight_from_storage();
 			if let Ok(info) = Self::fetch_kuaidi100_price_info(parcel_weight) {
 				log::info!("OCW ==> Kuaidi100 Price Info: {:?}", info);
 
@@ -239,7 +235,6 @@ pub mod pallet {
 				log::warn!("No UTF8 body");
 				http::Error::Unknown
 			})?;
-			log::info!("OCW ==> url: {:?}", url);
 			let request = http::Request::get(url);
 			let pending = request
 				.add_header("User-Agent", "Substrate-Offchain-Worker")
@@ -270,35 +265,19 @@ pub mod pallet {
 				"https://www.kuaidi100.com/apicenter/order.do?method=availableCompList&sendxzq=%E5%B9%BF%E4%B8%9C%E6%B7%B1%E5%9C%B3%E5%B8%82%E5%8D%97%E5%B1%B1%E5%8C%BA&recxzq=%E5%B9%BF%E4%B8%9C%E6%B7%B1%E5%9C%B3%E5%B8%82%E5%8D%97%E5%B1%B1%E5%8C%BA&useCoupon=N&orderAmount=2&platform2=BATCH_ORDER&weight="
 					.as_bytes(),
 			);
-			log::info!("OCW ==> parcel_weight: {:?}", parcel_weight);
 			result.extend_from_slice(parcel_weight.as_slice());
 			result
 		}
 
-		fn derived_key(block_number: T::BlockNumber) -> Vec<u8> {
-			block_number.using_encoded(|_encoded_bn| {
-				ONCHAIN_TX_KEY
-					.clone()
-					.into_iter()
-					// .chain(b"/".into_iter())
-					// .chain(encoded_bn)
-					.copied()
-					.collect::<Vec<u8>>()
-			})
-		}
-
-		fn get_parcel_weight_from_storage(
-			block_number: T::BlockNumber,
-		) -> BoundedVec<u8, ConstU32<4>> {
+		fn get_parcel_weight_from_storage() -> BoundedVec<u8, ConstU32<4>> {
 			let mut result = BoundedVec::<u8, ConstU32<4>>::try_from(b"1".to_vec()).unwrap();
-			if let Some(parcel_weight) = sp_runtime::offchain::storage::StorageValueRef::persistent(
-				&Self::derived_key(block_number),
-			)
-			.get::<IndexingData>()
-			.unwrap_or_else(|_| {
-				log::info!("OCW ==> Error while fetching data from offchain storage!");
-				None
-			}) {
+			if let Some(parcel_weight) =
+				sp_runtime::offchain::storage::StorageValueRef::persistent(ONCHAIN_TX_KEY)
+					.get::<IndexingData>()
+					.unwrap_or_else(|_| {
+						log::info!("OCW ==> Error while fetching data from offchain storage!");
+						None
+					}) {
 				result = parcel_weight.0;
 			}
 			result
