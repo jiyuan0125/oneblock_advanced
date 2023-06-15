@@ -7,6 +7,7 @@ use serde::{Deserialize, Deserializer};
 use sp_core::ConstU32;
 use sp_runtime::BoundedVec;
 
+/// 快递100价格查询返回的数据
 #[derive(Deserialize, Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct Kuaidi100Price {
 	#[serde(deserialize_with = "de_string_to_bounded_bytes")]
@@ -27,6 +28,7 @@ impl fmt::Debug for Kuaidi100Price {
 	}
 }
 
+/// 快递100价格查询响应
 #[derive(Deserialize, Debug, Encode, Decode)]
 pub struct Kuaidi100PriceResponse {
 	pub status: i32,
@@ -34,6 +36,7 @@ pub struct Kuaidi100PriceResponse {
 	pub data: BoundedVec<Kuaidi100Price, ConstU32<10>>,
 }
 
+/// 反序列化字符串到 BoundedVec<u8, ConstU32<32>>
 pub fn de_string_to_bounded_bytes<'de, D>(de: D) -> Result<BoundedVec<u8, ConstU32<32>>, D::Error>
 where
 	D: Deserializer<'de>,
@@ -43,6 +46,7 @@ where
 		.map_err(|_| serde::de::Error::custom("BoundedVec error"))?)
 }
 
+/// 反序列化字符串到 u32
 pub fn de_string_to_u32<'de, D>(de: D) -> Result<u32, D::Error>
 where
 	D: Deserializer<'de>,
@@ -53,6 +57,7 @@ where
 	Ok(price)
 }
 
+/// 反序列化 Vec<Kuaidi100Price> 到 BoundedVec<Kuaidi100Price, ConstU32<10>>
 pub fn de_vec_to_bounded_vec<'de, D>(
 	de: D,
 ) -> Result<BoundedVec<Kuaidi100Price, ConstU32<10>>, D::Error>

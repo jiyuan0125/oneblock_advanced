@@ -10,6 +10,7 @@ mod kuaidi100_price;
 use sp_core::crypto::KeyTypeId;
 
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"btc!");
+// 这个模块是签名需要用到的
 pub mod crypto {
 	use super::KEY_TYPE;
 	use sp_core::sr25519::Signature as Sr25519Signature;
@@ -144,6 +145,7 @@ pub mod pallet {
 		}
 	}
 
+	// 发送未签名交易时需要实现的 trait
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
@@ -225,6 +227,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// 获取快递100的价格信息
 		fn fetch_kuaidi100_price_info(
 			parcel_weight: BoundedVec<u8, ConstU32<4>>,
 		) -> Result<BoundedVec<Kuaidi100Price, ConstU32<10>>, http::Error> {
@@ -260,6 +263,7 @@ pub mod pallet {
 			Ok(kuaidi100_price_response.data)
 		}
 
+		/// 获取快递100的价格信息的url
 		fn get_url(parcel_weight: BoundedVec<u8, ConstU32<4>>) -> Vec<u8> {
 			let mut result = Vec::from(
 				"https://www.kuaidi100.com/apicenter/order.do?method=availableCompList&sendxzq=%E5%B9%BF%E4%B8%9C%E6%B7%B1%E5%9C%B3%E5%B8%82%E5%8D%97%E5%B1%B1%E5%8C%BA&recxzq=%E5%B9%BF%E4%B8%9C%E6%B7%B1%E5%9C%B3%E5%B8%82%E5%8D%97%E5%B1%B1%E5%8C%BA&useCoupon=N&orderAmount=2&platform2=BATCH_ORDER&weight="
@@ -269,6 +273,7 @@ pub mod pallet {
 			result
 		}
 
+		/// 从链下存储中获取快递重量
 		fn get_parcel_weight_from_storage() -> BoundedVec<u8, ConstU32<4>> {
 			let mut result = BoundedVec::<u8, ConstU32<4>>::try_from(b"1".to_vec()).unwrap();
 			if let Some(parcel_weight) =
