@@ -284,6 +284,7 @@ impl pallet_template::Config for Runtime {
 impl pallet_poe::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxClaimLength = ConstU32<32>;
+	type WeightInfo = pallet_poe::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
@@ -431,6 +432,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_template, TemplateModule]
+		[pallet_poe, PoeModule]
 	);
 }
 
