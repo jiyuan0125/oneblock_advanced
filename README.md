@@ -82,4 +82,31 @@ Runtime 升级
 
 ![tests](./img/lesson04_03.png)
 
+
+## 第五节课作业
+
+[https://github.com/jiyuan0125/oneblock_advanced_ink](https://github.com/jiyuan0125/oneblock_advanced_ink)
+
+## 第六节课作业
+
+### 作业
+* 为 proof of existence (poe) 模块的可调用函数 create_claim, revoke_claim, transfer_claim 添加 benchmark 用例，并且将 benchmark 运行的结果应用在可调用函数上；
+* 选择 node-template 或者其它节点程序，生成 Chain Spec 文件（两种格式都需要）；
+* （附加题）根据 Chain Spec，部署公开测试网络
+
+### 答案：
+1. [pallets/poe/src/benchmarking.rs](./pallets/poe/src/benchmarking.rs)
+2. [nutsoft-staging.json](./nutsoft-staging.json) [nutsoft-staging-raw.json](./nutsoft-staging-raw.json)，生成chain spec的脚本在 [scripts](./scripts) 目录里
+3. 部署节点的脚本在 [scripts](./scripts) 目录里
+
+**存在的问题：在这个4个验证人的网络里，我部署的节点无法同步区块，不知道是什么原因，所以无法验证部署的节点是否正常工作。**
+### 截图：
+
+![tests](./img/lesson06_01.png)
+
+![tests](./img/lesson06_02.png)
+
+![tests](./img/lesson06_03.png)
+
+
 ![OneBlock+](./img/substrate.png)
