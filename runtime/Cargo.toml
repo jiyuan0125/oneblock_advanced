@@ -143,7 +143,7 @@ runtime-benchmarks = [
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"pallet-im-online/runtime-benchmarks",
-	"pallet-offences-benchmarking",
+	"pallet-offences-benchmarking/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
